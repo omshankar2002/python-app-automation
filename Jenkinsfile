@@ -6,7 +6,7 @@ pipeline {
     environment {
         IMAGE_NAME = "python-app"
         CONTAINER_NAME = "python-app"
-        HOSTING_IP = "10.0.1.x"
+        HOSTING_IP = "10.0.1.226"
     }
 
     stages {
