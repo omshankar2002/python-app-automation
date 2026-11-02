@@ -60,6 +60,7 @@ pipeline {
             }
         }
 
+     
         stage('Deploy Application') {
             steps {
 
@@ -71,18 +72,23 @@ pipeline {
                     )
                 ]) {
 
-                    sh '''#!/bin/bash
+                    sh '''
                         set -euo pipefail
+
+                        echo "Deploying application on hosting server"
 
                         ssh \
                         -i "$SSH_KEY" \
                         -o StrictHostKeyChecking=yes \
-                        "$SSH_USER@$10.0.1.226" \
-                        "sudo docker rm -f python-app || true; sudo docker run -d --restart unless-stopped --name python-app -p 8000:8000 python-app:${BUILD_NUMBER}"
+                        "$SSH_USER@$HOSTING_IP" \
+                        'sudo docker rm -f python-app || true; sudo docker run -d --restart unless-stopped --name python-app -p 8000:8000 python-app:'"$BUILD_NUMBER"
+
+                        echo "Application deployment completed"
                     '''
                 }
             }
         }
+
 
         stage('Health Check') {
             steps {
