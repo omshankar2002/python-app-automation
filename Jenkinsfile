@@ -61,65 +61,64 @@ pipeline {
         }
 
      
-        stage('Deploy Application') {
-            steps {
+        
+stage('Deploy Application') {
+    steps {
+        withCredentials([
+            sshUserPrivateKey(
+                credentialsId: 'hosting-ssh-key',
+                keyFileVariable: 'SSH_KEY',
+                usernameVariable: 'SSH_USER'
+            )
+        ]) {
+            sh '''#!/bin/bash
+                set -euo pipefail
 
-                withCredentials([
-                    sshUserPrivateKey(
-                        credentialsId: 'hosting-ssh-key',
-                        keyFileVariable: 'SSH_KEY',
-                        usernameVariable: 'SSH_USER'
-                    )
-                ]) {
+                echo "Deploying application on hosting server"
 
-                    sh '''
-                        set -euo pipefail
+                ssh \
+                  -i "$SSH_KEY" \
+                  -o StrictHostKeyChecking=yes \
+                  "$SSH_USER@$HOSTING_IP" \
+                  'sudo docker rm -f python-app || true; sudo docker run -d --restart unless-stopped --name python-app -p 8000:8000 python-app:'"$BUILD_NUMBER"
 
-                        echo "Deploying application on hosting server"
-
-                        ssh \
-                        -i "$SSH_KEY" \
-                        -o StrictHostKeyChecking=yes \
-                        "$SSH_USER@$HOSTING_IP" \
-                        'sudo docker rm -f python-app || true; sudo docker run -d --restart unless-stopped --name python-app -p 8000:8000 python-app:'"$BUILD_NUMBER"
-
-                        echo "Application deployment completed"
-                    '''
-                }
-            }
+                echo "Application deployment completed"
+            '''
         }
+    }
+}
 
 
   
-    stage('Health Check') {
-        steps {
+    
+stage('Health Check') {
+    steps {
+        withCredentials([
+            sshUserPrivateKey(
+                credentialsId: 'hosting-ssh-key',
+                keyFileVariable: 'SSH_KEY',
+                usernameVariable: 'SSH_USER'
+            )
+        ]) {
+            sh '''#!/bin/bash
+                set -euo pipefail
 
-            withCredentials([
-                sshUserPrivateKey(
-                    credentialsId: 'hosting-ssh-key',
-                    keyFileVariable: 'SSH_KEY',
-                    usernameVariable: 'SSH_USER'
-                )
-            ]) {
+                echo "Checking application health"
 
-                sh '''
-                    set -euo pipefail
+                sleep 5
 
-                    echo "Waiting for application to start"
+                ssh \
+                  -i "$SSH_KEY" \
+                  -o StrictHostKeyChecking=yes \
+                  "$SSH_USER@$HOSTING_IP" \
+                  'curl -fsS http://localhost:8000/health'
 
-                    sleep 5
-
-                    ssh \
-                    -i "$SSH_KEY" \
-                    -o StrictHostKeyChecking=yes \
-                    "$SSH_USER@$HOSTING_IP" \
-                    'curl -fsS http://localhost:8000/health'
-
-                    echo "Application health check successful"
-                '''
-            }
+                echo "Application health check successful"
+            '''
         }
     }
+}
+
 
     }
 
