@@ -90,33 +90,37 @@ pipeline {
         }
 
 
-        stage('Health Check') {
-            steps {
+  
+    stage('Health Check') {
+        steps {
 
-                withCredentials([
-                    sshUserPrivateKey(
-                        credentialsId: 'hosting-ssh-key',
-                        keyFileVariable: 'SSH_KEY',
-                        usernameVariable: 'SSH_USER'
-                    )
-                ]) {
+            withCredentials([
+                sshUserPrivateKey(
+                    credentialsId: 'hosting-ssh-key',
+                    keyFileVariable: 'SSH_KEY',
+                    usernameVariable: 'SSH_USER'
+                )
+            ]) {
 
-                    sh '''#!/bin/bash
-                        set -euo pipefail
+                sh '''
+                    set -euo pipefail
 
-                        echo "Checking application health"
+                    echo "Waiting for application to start"
 
-                        ssh \
-                        -i "$SSH_KEY" \
-                        -o StrictHostKeyChecking=yes \
-                        "$SSH_USER@$HOSTING_IP" \
-                        "curl -fsS http://localhost:8000/health"
+                    sleep 5
 
-                        echo "Application deployment successful!"
-                    '''
-                }
+                    ssh \
+                    -i "$SSH_KEY" \
+                    -o StrictHostKeyChecking=yes \
+                    "$SSH_USER@$HOSTING_IP" \
+                    'curl -fsS http://localhost:8000/health'
+
+                    echo "Application health check successful"
+                '''
             }
         }
+    }
+
     }
 
     post {
